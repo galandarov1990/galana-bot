@@ -50,28 +50,4 @@ def analyze_with_gemini(stats, videos):
 Напиши ежедневный отчёт для Telegram. Включи:
 1. Прогресс к монетизации с прогресс-барами
 2. Анализ какие видео работают лучше
-3. Конкретную рекомендацию что снять сегодня для вирусного охвата через Shorts
-4. Мотивирующее слово
-
-Используй эмодзи. Будь честным и конкретным. Пиши на русском."""
-
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key={GEMINI_API_KEY}"
-    body = {"contents": [{"parts": [{"text": prompt}]}]}
-    r = requests.post(url, json=body).json()
-
-    if "candidates" in r:
-        return r["candidates"][0]["content"]["parts"][0]["text"]
-    elif "error" in r:
-        return f"Ошибка Gemini: {r['error']['message']}"
-    else:
-        return str(r)
-
-def main():
-    stats = get_channel_stats()
-    videos = get_latest_videos()
-    report = analyze_with_gemini(stats, videos)
-    send_telegram(report)
-    print("Отчёт отправлен!")
-
-if __name__ == "__main__":
-    main()
+3. Конкретн
