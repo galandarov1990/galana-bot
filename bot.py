@@ -58,10 +58,13 @@ def analyze_with_gemini(stats, videos):
     url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={GEMINI_API_KEY}"
     body = {"contents": [{"parts": [{"text": prompt}]}]}
     r = requests.post(url, json=body).json()
-    candidates = r.get("candidates") or r.get("кандидаты")
-if not candidates:
-    return str(r)
-return candidates[0]["content"]["parts"][0]["text"]
+    
+    if "candidates" in r:
+        return r["candidates"][0]["content"]["parts"][0]["text"]
+    elif "error" in r:
+        return f"Ошибка Gemini: {r['error']['message']}"
+    else:
+        return str(r)
 
 def main():
     stats = get_channel_stats()
