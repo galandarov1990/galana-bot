@@ -34,14 +34,39 @@ def analyze_with_gemini(stats, videos):
         title = v["snippet"]["title"]
         vc = v["statistics"].get("viewCount", 0)
         lc = v["statistics"].get("likeCount", 0)
-        videos_info += "- " + title + ": " + str(vc) + " просмотров, " + str(lc) + " лайков\n"
+        videos_info += "- " + title + ": " + str(vc) + " prosm, " + str(lc) + " lajkov\n"
 
-    prompt = "Ты AI-менеджер YouTube канала @galanalife. Канал об Али на круизном лайнере с 3D-анимацией.\n"
-    prompt += "Цель: вирусный охват через Shorts, монетизация (1000 подп + 4000 часов).\n\n"
-    prompt += "Статистика:\n"
-    prompt += "- Подписчики: " + str(subs) + " / 1000\n"
-    prompt += "- Просмотры: " + str(views) + "\n"
-    prompt += "- Видео: " + str(video_count) + "\n"
-    prompt += "- Часов просмотров: " + str(hours) + " / 4000\n\n"
-    prompt += "Последние видео:\n" + videos_info + "\n"
-    prompt += "Напиши ежедневный отчёт для Telegram на русском с эмо
+    prompt = "Ty AI-menedzher YouTube kanala @galanalife.\n"
+    prompt += "Cel: virusnyj ohvat cherez Shorts, monetizaciya (1000 podp + 4000 chasov).\n\n"
+    prompt += "Statistika:\n"
+    prompt += "- Podpischiki: " + str(subs) + " / 1000\n"
+    prompt += "- Prosmotry: " + str(views) + "\n"
+    prompt += "- Video: " + str(video_count) + "\n"
+    prompt += "- Chasov: " + str(hours) + " / 4000\n\n"
+    prompt += "Poslednie video:\n" + videos_info + "\n"
+    prompt += "Napishi ezhednevnyj otchet dlya Telegram na russkom yazyke s emoji. Vklyuchi:\n"
+    prompt += "1. Progress k monetizacii s progress-barami\n"
+    prompt += "2. Analiz video\n"
+    prompt += "3. Rekomendaciyu chto snyat segodnya dlya Shorts\n"
+    prompt += "4. Motiviruyuschee slovo\n"
+
+    url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=" + GEMINI_API_KEY
+    body = {"contents": [{"parts": [{"text": prompt}]}]}
+    r = requests.post(url, json=body).json()
+
+    if "candidates" in r:
+        return r["candidates"][0]["content"]["parts"][0]["text"]
+    elif "error" in r:
+        return "Oshibka Gemini: " + r["error"]["message"]
+    else:
+        return str(r)
+
+def main():
+    stats = get_channel_stats()
+    videos = get_latest_videos()
+    report = analyze_with_gemini(stats, videos)
+    send_telegram(report)
+    print("Otchet otpravlen!")
+
+if __name__ == "__main__":
+    main()
