@@ -55,10 +55,10 @@ def analyze_with_gemini(stats, videos):
 
 Используй эмодзи. Будь честным и конкретным. Пиши на русском."""
 
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={GEMINI_API_KEY}"
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
     body = {"contents": [{"parts": [{"text": prompt}]}]}
     r = requests.post(url, json=body).json()
-    
+
     if "candidates" in r:
         return r["candidates"][0]["content"]["parts"][0]["text"]
     elif "error" in r:
