@@ -1,16 +1,11 @@
 import os
-import json
 import requests
-import anthropic
-from datetime import datetime, timedelta
 
 YOUTUBE_API_KEY = os.environ.get("YOUTUBE_API_KEY")
 CHANNEL_ID = os.environ.get("CHANNEL_ID")
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
-ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY")
-
-client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
 def get_channel_stats():
     url = f"https://www.googleapis.com/youtube/v3/channels?part=statistics,snippet&id={CHANNEL_ID}&key={YOUTUBE_API_KEY}"
@@ -28,17 +23,18 @@ def send_telegram(text):
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
     requests.post(url, json={"chat_id": TELEGRAM_CHAT_ID, "text": text, "parse_mode": "HTML"})
 
-def analyze_with_claude(stats, videos):
+def analyze_with_gemini(stats, videos):
     subs = stats["statistics"]["subscriberCount"]
     views = stats["statistics"]["viewCount"]
     video_count = stats["statistics"]["videoCount"]
-    
+    hours = round(int(views) * 5 / 60)
+
     videos_info = "\n".join([
         f"- {v['snippet']['title']}: {v['statistics'].get('viewCount', 0)} просмотров, {v['statistics'].get('likeCount', 0)} лайков"
         for v in videos[:5]
     ])
-    
-    prompt = f"""Ты AI-менеджер YouTube канала @galanalife. Канал о жизни Али, работающего на круизном лайнере, с 3D-анимацией.
+
+    prompt = f"""Ты AI-менеджер YouTube канала @galanalife. Канал об Али, работающем на круизном лайнере, с 3D-анимацией.
 
 Цель: вирусный охват через Shorts, путь к монетизации (1000 подписчиков + 4000 часов).
 
@@ -46,33 +42,28 @@ def analyze_with_claude(stats, videos):
 - Подписчики: {subs} / 1000
 - Просмотры всего: {views}
 - Видео: {video_count}
+- Примерно часов просмотров: {hours} / 4000
 
 Последние видео:
 {videos_info}
 
-Прогресс к монетизации:
-- Подписчики: {subs}/1000 ({round(int(subs)/10)}%)
-- Часов просмотров: примерно {round(int(views)*5/60)} / 4000
-
-Напиши ежедневный отчёт в Telegram. Включи:
-1. Прогресс бар к монетизации
-2. Анализ последних видео
+Напиши ежедневный отчёт для Telegram. Включи:
+1. Прогресс к монетизации с прогресс-барами
+2. Анализ какие видео работают лучше
 3. Конкретную рекомендацию что снять сегодня для вирусного охвата через Shorts
 4. Мотивирующее слово
 
-Используй эмодзи. Будь конкретным и честным."""
+Используй эмодзи. Будь честным и конкретным. Пиши на русском."""
 
-    message = client.messages.create(
-        model="claude-sonnet-4-20250514",
-        max_tokens=1000,
-        messages=[{"role": "user", "content": prompt}]
-    )
-    return message.content[0].text
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={GEMINI_API_KEY}"
+    body = {"contents": [{"parts": [{"text": prompt}]}]}
+    r = requests.post(url, json=body).json()
+    return r["candidates"][0]["content"]["parts"][0]["text"]
 
 def main():
     stats = get_channel_stats()
     videos = get_latest_videos()
-    report = analyze_with_claude(stats, videos)
+    report = analyze_with_gemini(stats, videos)
     send_telegram(report)
     print("Отчёт отправлен!")
 
